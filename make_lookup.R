@@ -20,4 +20,3 @@ make_interaction_lookup <- function(interactions = get_interactions()) {
   lookup
 }
 
-make_go_lookup
