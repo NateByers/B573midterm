@@ -1,8 +1,16 @@
 
 get_interactions <- function() {
-  read.table("data/BIOGRID-ORGANISM-Homo_sapiens-3.1.91.tab.txt",
-             stringsAsFactors = FALSE, skip = 35, header = TRUE, sep = "\t",
+  interactions <- read.table("data/BIOGRID-ORGANISM-Homo_sapiens-3.1.91.tab.txt",
+                             stringsAsFactors = FALSE, skip = 35, header = TRUE, sep = "\t",
              comment.char = "", quote = "")
+  
+  for(i in names(interactions)) {
+    if(class(interactions[[i]]) == "character") {
+      interactions[[i]] <- tolower(interactions[[i]])
+    }
+  }
+  
+  interactions
 }
 
 
@@ -14,6 +22,12 @@ get_ontologies <- function() {
   
   ontologies <- readr::read_delim("data/gene_association.goa_human.txt", "\t", quote = "",
                                   skip = 23)
+  
+  for(i in names(ontologies)) {
+    if(class(ontologies[[i]]) == "character") {
+      ontologies[[i]] <- tolower(ontologies[[i]])
+    }
+  }
   
   # README is here ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README
   

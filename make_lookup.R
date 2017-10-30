@@ -8,11 +8,10 @@ make_interaction_lookup <- function(interactions = get_interactions()) {
       dplyr::select(ends_with(x)) %>%
       dplyr::rename_all(funs(sub(paste0("_", x), "", .))) %>%
       dplyr::mutate(aliases = paste(OFFICIAL_SYMBOL, ALIASES_FOR, sep = "|")) %>%
-      dplyr::select(INTERACTOR, aliases) %>%
-      dplyr::rename(interactor_id = INTERACTOR) %>%
+      dplyr::select(OFFICIAL_SYMBOL, aliases) %>%
+      dplyr::rename(official_symbol = OFFICIAL_SYMBOL) %>%
       tidyr::separate_rows(aliases, sep = "\\|") %>%
-      dplyr::mutate(aliases = trimws(aliases, "both"),
-                    aliases = tolower(aliases)) %>%
+      dplyr::mutate(aliases = trimws(aliases, "both")) %>%
       dplyr::distinct() 
     
   }, interactions = interactions)
@@ -26,11 +25,10 @@ make_interaction_lookup <- function(interactions = get_interactions()) {
 make_ontologies_lookup <- function(ontologies = get_ontologies()) {
   
   lookup <- ontologies %>%
-    dplyr::select(DB_Object_ID, DB_Object_Synonym, GO_ID) %>%
-    dplyr::rename(gene_id = DB_Object_ID, aliases = DB_Object_Synonym, go_id = GO_ID) %>%
+    dplyr::select(DB_Object_Synonym, DB_Object_Name) %>%
+    dplyr::rename(aliases = DB_Object_Synonym, protein_function = DB_Object_Name) %>%
     tidyr::separate_rows(aliases, sep = "\\|") %>%
-    dplyr::mutate(aliases = trimws(aliases, "both"),
-                  aliases = tolower(aliases)) %>%
+    dplyr::mutate(aliases = trimws(aliases, "both")) %>%
     dplyr::distinct() 
   
 }
@@ -40,7 +38,12 @@ make_lookup <- function(interactions = get_interactions(), ontologies = get_onto
   lookup_ontologies <- make_ontologies_lookup(ontologies)
   
   lookup <- inner_join(lookup_interactions, lookup_ontologies, "aliases") %>%
-    distinct()
+    dplyr::select(-aliases) %>%
+    dplyr::mutate(protein_function = gsub("-|,", " ", protein_function),
+                  protein_function = trimws(protein_function, "both"),
+                  protein_function = gsub("\\s{2,}", " ", protein_function)) %>%
+    distinct() %>%
+    arrange(protein_function)
   
   lookup
 }
