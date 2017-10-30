@@ -35,3 +35,13 @@ make_ontologies_lookup <- function(ontologies = get_ontologies()) {
   
 }
 
+make_lookup <- function(interactions = get_interactions(), ontologies = get_ontologies()) {
+  lookup_interactions <- make_interaction_lookup(interactions)
+  lookup_ontologies <- make_ontologies_lookup(ontologies)
+  
+  lookup <- inner_join(lookup_interactions, lookup_ontologies, "aliases") %>%
+    distinct()
+  
+  lookup
+}
+
