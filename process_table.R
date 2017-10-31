@@ -3,6 +3,7 @@ library(parallel)
 source("read_data.R")
 source("make_lookup.R")
 source("make_table.R")
+source("get_protein_function.R")
 
 process_table <- function(table = make_table(), parallel = FALSE, clusters) {
 
@@ -30,7 +31,8 @@ process_table <- function(table = make_table(), parallel = FALSE, clusters) {
     }, table = table)
     stopCluster(cl)
   } else {
-    protein_dfs <- lapply(unique(table$official_symbol), function(protein) {
+    then <- Sys.time()
+    protein_dfs <- lapply(unique(table$official_symbol)[1:10], function(protein) {
       # protein <- unique(table$official_symbol)[1]
       table %>%
         dplyr::filter(protein %in% official_symbol) %>%
@@ -40,6 +42,17 @@ process_table <- function(table = make_table(), parallel = FALSE, clusters) {
         dplyr::filter(n == max(n)) %>%
         dplyr::top_n(1, protein_function)
     })
+    Sys.time() - then
   }
+    
+  Reduce(rbind, protein_dfs)
+  
   
 }
+
+
+# process_table <- function(table = make_table(), lookup = make_lookup()) {
+#   
+#   table <- table %>%
+#     dplyr::group_by(interaction)
+# }
