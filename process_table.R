@@ -1,0 +1,45 @@
+library(dplyr)
+library(parallel)
+source("read_data.R")
+source("make_lookup.R")
+source("make_table.R")
+
+process_table <- function(table = make_table(), parallel = FALSE, clusters) {
+
+  table <- table %>%
+    dplyr::group_by(interaction)
+  
+  if(parallel) {
+    if(missing(clusters)) {
+      clusters <- parallel::detectCores() - 1
+    }
+    cl <- parallel::makeCluster(clusters)
+    clusterEvalQ(cl, {
+      library(dplyr)
+      NULL
+    })
+    protein_dfs <- parallel::parLapply(cl, unique(table$official_symbol), function(protein, table) {
+      # protein <- unique(table$official_symbol)[1]
+      table %>%
+        dplyr::filter(protein %in% official_symbol) %>%
+        dplyr::filter(official_symbol != protein) %>%
+        dplyr::group_by(protein_function) %>%
+        dplyr::summarize(n = n()) %>%
+        dplyr::filter(n == max(n)) %>%
+        dplyr::top_n(1, protein_function)
+    }, table = table)
+    stopCluster(cl)
+  } else {
+    protein_dfs <- lapply(unique(table$official_symbol), function(protein) {
+      # protein <- unique(table$official_symbol)[1]
+      table %>%
+        dplyr::filter(protein %in% official_symbol) %>%
+        dplyr::filter(official_symbol != protein) %>%
+        dplyr::group_by(protein_function) %>%
+        dplyr::summarize(n = n()) %>%
+        dplyr::filter(n == max(n)) %>%
+        dplyr::top_n(1, protein_function)
+    })
+  }
+  
+}
