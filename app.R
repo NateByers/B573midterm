@@ -10,6 +10,8 @@ server <- function(input, output) {
   output$protein_function <- renderText({
     return_function_text(proteins, input$protein)
   })
+  
+  
 }
 
 ui <- fluidPage(
@@ -22,5 +24,7 @@ ui <- fluidPage(
     mainPanel(dataTableOutput("protein_table"))
   )
 )
+
+onStop(function() rm("shiny_data.rda"))
 
 shinyApp(ui = ui, server = server)

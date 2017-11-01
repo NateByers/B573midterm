@@ -100,7 +100,7 @@ make_table <- function(interactions = get_interactions(), ontologies = get_ontol
 }
 
 get_protein_function <- function(table = make_table(), protein) {
-  # protein <- "actn2"
+  # protein <- "abca13"
   
   protein_df <- table %>%
     dplyr::filter(official_symbol == protein)
@@ -137,15 +137,20 @@ process_table <- function(table = make_table()) {
 
 return_function_text <- function(proteins, protein) {
   
-  protein <- get_protein_function(proteins, protein)
-  prot_func <- protein[["protein_function"]]
-  n <- protein[["n"]]
+  protein_df <- get_protein_function(proteins, protein)
+  prot_func <- protein_df[["protein_function"]]
+  n <- protein_df[["n"]]
   
-  if(!is.na(prot_func) & n > 2) {
-    paste("protein function:", prot_func)
+  protein_text <- paste0("Protein Function for ", protein,
+                          ":")
+  
+  if(!is.na(prot_func) & n > 1) {
+     function_text <- prot_func
   } else {
-    "not enough information to assign a function"
+    function_text <- "not enough information to assign a function"
   }
+  
+  paste(protein_text, function_text)
 }
 
 read_protein <- function(proteins) {
