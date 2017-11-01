@@ -1,7 +1,7 @@
 get_interactions <- function() {
-  interactions <- read.table("data/BIOGRID-ORGANISM-Homo_sapiens-3.1.91.tab.txt",
+  interactions <- read.table("BIOGRID-ORGANISM-Homo_sapiens-3.1.91.tab.txt",
                              stringsAsFactors = FALSE, skip = 35, header = TRUE, sep = "\t",
-                             comment.char = "", quote = "")
+                             comment.char = "", quote = "") 
   
   for(i in names(interactions)) {
     if(class(interactions[[i]]) == "character") {
@@ -15,8 +15,8 @@ get_interactions <- function() {
 
 get_ontologies <- function() {
   
-  ontologies <- readr::read_delim("data/gene_association.goa_human.txt", "\t", quote = "",
-                                  skip = 23)
+  ontologies <- readr::read_delim("gene_association.goa_human.txt", "\t", quote = "",
+                                  skip = 23) 
   
   for(i in names(ontologies)) {
     if(class(ontologies[[i]]) == "character") {
@@ -69,7 +69,6 @@ make_ontologies_lookup <- function(ontologies = get_ontologies()) {
     tidyr::separate_rows(aliases, sep = "\\|") %>%
     dplyr::mutate(aliases = trimws(aliases, "both")) %>%
     dplyr::distinct() 
-  
 }
 
 make_lookup <- function(interactions = get_interactions(), ontologies = get_ontologies()) {
@@ -87,15 +86,15 @@ make_lookup <- function(interactions = get_interactions(), ontologies = get_onto
   lookup
 }
 
-make_table <- function(interactions = get_interactions(), ontologies = get_ontologies()) {
-  # interactions = get_interactions(); ontologies = get_ontologies()
-  lookup <- make_lookup(interactions, ontologies)
+make_table <- function(interactions = get_interactions(), ontologies = get_ontologies(),
+                       lookup = make_lookup()) {
   
   interactions <- interactions %>%
     dplyr::mutate(interaction = row_number()) %>%
     dplyr::select(interaction, starts_with("OFFICIAL")) %>%
     tidyr::gather("interactor", "official_symbol", starts_with("OFFICIAL")) %>%
-    dplyr::left_join(lookup, "official_symbol") 
+    dplyr::left_join(lookup, "official_symbol") %>%
+    dplyr::arrange(interaction, interactor)
   
   interactions
 }
@@ -112,7 +111,8 @@ get_protein_function <- function(table = make_table(), protein) {
     dplyr::group_by(protein_function) %>%
     dplyr::summarize(n = n()) %>%
     dplyr::filter(n == max(n)) %>%
-    dplyr::top_n(1, protein_function)
+    dplyr::top_n(1, protein_function) %>%
+    dplyr::mutate(official_symbol = protein)
   
   table
 }
@@ -120,13 +120,55 @@ get_protein_function <- function(table = make_table(), protein) {
 
 process_table <- function(table = make_table()) {
   
-  then <- Sys.time()
-  protein_dfs <- lapply(unique(table$official_symbol)[1:10], get_protein_function,
-                        table = table)
-  Sys.time() - then
+  proteins <- unique(table$official_symbol)
   
-  protein_df <- Reduce(rbind, protein_dfs)
+  pb <- txtProgressBar(min = 1, max = length(proteins),
+                       style = 3)
   
+  protein_dfs <- lapply(seq_along(proteins), function(i) {
+    setTxtProgressBar(pb, i)
+    get_protein_function(table, proteins[i])
+    })
+  
+  close(pb)
+  
+  Reduce(rbind, protein_dfs)
 }
+
+return_function_text <- function(proteins, protein) {
+  
+  protein <- get_protein_function(proteins, protein)
+  prot_func <- protein[["protein_function"]]
+  n <- protein[["n"]]
+  
+  if(!is.na(prot_func) & n > 2) {
+    paste("protein function:", prot_func)
+  } else {
+    "not enough information to assign a function"
+  }
+}
+
+read_protein <- function(proteins) {
+  
+  protein <- readline(prompt = "Enter protein: ") %>%
+    tolower()
+  
+  return_function_text(proteins, protein)
+}
+
+start_shiny <- function() {
+  
+  start <- readline(prompt = "Start shiny app [y/n]?")
+  
+  if(tolower(start) %in% c("y", "yes")) {
+    save(proteins, file = "shiny_data.rda")
+    if(!require(shiny)) {
+      install.packages("shiny")
+    }
+    shiny::runApp()
+  }
+}
+
+
 
 

@@ -15,6 +15,6 @@ lookup <- make_lookup(interactions, ontologies)
 cat("\n[6] making a useful table of interactions...")
 proteins <- make_table(interactions, ontologies, lookup)
 
-cat("\n[7] processing the table to get the associated function for each protein
-     based on interactions...")
-proteins <- process_table(proteins)
+print(read_protein(proteins))
+
+print(start_shiny())
