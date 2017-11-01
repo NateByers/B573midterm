@@ -1,3 +1,7 @@
+# read in all of the lines in the helpers file and check to see
+# if they have been installed (if not, install), then load
+# the libraries
+
 lines <- readLines("helpers.R")
 lines <- grep("::", lines, value = TRUE)
 libraries <- sapply(lines, function(x) {

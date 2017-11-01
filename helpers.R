@@ -24,7 +24,7 @@ get_ontologies <- function() {
     }
   }
   
-  # README is here ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README
+  # get the headers from the README is here ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README
   
   headers <- readLines("ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README")
   headers <-headers[(grep("^GAF2.1", headers) + 3):(grep("^GPAD1.1", headers) - 2)]
@@ -100,7 +100,6 @@ make_table <- function(interactions = get_interactions(), ontologies = get_ontol
 }
 
 get_protein_function <- function(table = make_table(), protein) {
-  # protein <- "abca13"
   
   protein_df <- table %>%
     dplyr::filter(official_symbol == protein)
