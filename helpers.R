@@ -64,8 +64,8 @@ make_interaction_lookup <- function(interactions = get_interactions()) {
 make_ontologies_lookup <- function(ontologies = get_ontologies()) {
   
   lookup <- ontologies %>%
-    dplyr::select(DB_Object_Synonym, DB_Object_Name) %>%
-    dplyr::rename(aliases = DB_Object_Synonym, protein_function = DB_Object_Name) %>%
+    dplyr::select(DB_Object_Synonym, GO_ID) %>%
+    dplyr::rename(aliases = DB_Object_Synonym, protein_function = GO_ID) %>%
     tidyr::separate_rows(aliases, sep = "\\|") %>%
     dplyr::mutate(aliases = trimws(aliases, "both")) %>%
     dplyr::distinct() 
@@ -77,11 +77,7 @@ make_lookup <- function(interactions = get_interactions(), ontologies = get_onto
   
   lookup <- inner_join(lookup_interactions, lookup_ontologies, "aliases") %>%
     dplyr::select(-aliases) %>%
-    dplyr::mutate(protein_function = gsub("-|,", " ", protein_function),
-                  protein_function = trimws(protein_function, "both"),
-                  protein_function = gsub("\\s{2,}", " ", protein_function)) %>%
-    distinct() %>%
-    arrange(protein_function)
+    distinct() 
   
   lookup
 }
