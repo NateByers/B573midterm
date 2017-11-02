@@ -102,8 +102,8 @@ get_protein_function <- function(interactions = get_interactions(),
     dplyr::inner_join(lookup, "official_symbol") %>%
     dplyr::group_by(protein_function) %>%
     dplyr::summarize(number_of_interactions = n()) %>%
-    dplyr::filter(n > 1) %>%
-    dplyr::arrange(desc(n)) %>%
+    dplyr::filter(number_of_interactions > 1) %>%
+    dplyr::arrange(desc(number_of_interactions)) %>%
     dplyr::mutate(official_symbol = toupper(protein),
                   protein_function = toupper(protein_function))
     
@@ -113,7 +113,9 @@ get_protein_function <- function(interactions = get_interactions(),
 
 return_function_text <- function(interactions, lookup, protein) {
   
-  protein_df <- get_protein_function(interactions, lookup, protein)
+  protein_df <- get_protein_function(interactions, lookup, protein) %>%
+    dplyr::select(-official_symbol) %>%
+    as.data.frame()
   
   
   cat(paste0("Protein Function(s) for ", protein,":\n"))
@@ -128,8 +130,7 @@ return_function_text <- function(interactions, lookup, protein) {
 
 read_protein <- function(interactions, lookup) {
   
-  protein <- readline(prompt = "Enter protein: ") %>%
-    tolower()
+  protein <- readline(prompt = "Enter protein: ") 
   
   return_function_text(interactions, lookup, protein)
 }
@@ -139,7 +140,7 @@ start_shiny <- function() {
   start <- readline(prompt = "Start shiny app [y/n]?")
   
   if(tolower(start) %in% c("y", "yes")) {
-    save(proteins, file = "shiny_data.rda")
+    save(interactions, lookup, file = "shiny_data.rda")
     if(!require(shiny)) {
       install.packages("shiny")
     }

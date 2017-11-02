@@ -1,14 +1,18 @@
 source("helpers.R")
 load("shiny_data.rda")
 
+symbols <- unique(c(interactions$OFFICIAL_SYMBOL_A, 
+                    interactions$OFFICIAL_SYMBOL_B))
+symbols <- symbols[order(symbols)]
+
+
+
 server <- function(input, output) {
   
-  output$protein_table <- renderDataTable({
-    proteins
-  })
+  output$interactions_table <- renderDataTable(interactions)
   
-  output$protein_function <- renderText({
-    return_function_text(proteins, input$protein)
+  output$predicted_functions <- renderDataTable({
+    get_protein_function(interactions, lookup, input$protein)
   })
   
   
@@ -17,12 +21,16 @@ server <- function(input, output) {
 ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
-      selectInput("protein", "Select Protein:",
-                  unique(proteins$official_symbol)[order(unique(proteins$official_symbol))]),
+      selectInput("protein", "Select Protein:", symbols),
       textOutput("protein_function")
     ),
-    mainPanel(dataTableOutput("protein_table"))
-  )
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Predicted Functions", dataTableOutput("predicted_functions")),
+        tabPanel("Interactions", dataTableOutput("interactions_table"))
+        )
+      )
+    )
 )
 
 onStop(function() rm("shiny_data.rda"))
