@@ -82,78 +82,56 @@ make_lookup <- function(interactions = get_interactions(), ontologies = get_onto
   lookup
 }
 
-make_table <- function(interactions = get_interactions(), ontologies = get_ontologies(),
-                       lookup = make_lookup()) {
+
+get_protein_function <- function(interactions = get_interactions(), 
+                                 lookup = make_lookup(), protein) {
+  # protein <- "EXOSC4"
+  protein <- tolower(protein)
   
   interactions <- interactions %>%
     dplyr::mutate(interaction = row_number()) %>%
     dplyr::select(interaction, starts_with("OFFICIAL")) %>%
-    tidyr::gather("interactor", "official_symbol", starts_with("OFFICIAL")) %>%
-    dplyr::left_join(lookup, "official_symbol") %>%
-    dplyr::arrange(interaction, interactor)
+    tidyr::gather("interactor", "official_symbol", starts_with("OFFICIAL"))
   
-  interactions
-}
-
-get_protein_function <- function(table = make_table(), protein) {
-  
-  protein_df <- table %>%
+  protein_df <- interactions %>%
     dplyr::filter(official_symbol == protein)
   
-  table <- table %>%
-    semi_join(protein_df, "interaction") %>%
-    filter(official_symbol != protein) %>%
+  table <- interactions %>%
+    dplyr::semi_join(protein_df, "interaction") %>%
+    dplyr::filter(official_symbol != protein) %>%
+    dplyr::inner_join(lookup, "official_symbol") %>%
     dplyr::group_by(protein_function) %>%
-    dplyr::summarize(n = n()) %>%
-    dplyr::filter(n == max(n)) %>%
-    dplyr::top_n(1, protein_function) %>%
-    dplyr::mutate(official_symbol = protein)
-  
+    dplyr::summarize(number_of_interactions = n()) %>%
+    dplyr::filter(n > 1) %>%
+    dplyr::arrange(desc(n)) %>%
+    dplyr::mutate(official_symbol = toupper(protein),
+                  protein_function = toupper(protein_function))
+    
   table
 }
 
 
-process_table <- function(table = make_table()) {
+return_function_text <- function(interactions, lookup, protein) {
   
-  proteins <- unique(table$official_symbol)
+  protein_df <- get_protein_function(interactions, lookup, protein)
   
-  pb <- txtProgressBar(min = 1, max = length(proteins),
-                       style = 3)
   
-  protein_dfs <- lapply(seq_along(proteins), function(i) {
-    setTxtProgressBar(pb, i)
-    get_protein_function(table, proteins[i])
-    })
+  cat(paste0("Protein Function(s) for ", protein,":\n"))
   
-  close(pb)
-  
-  Reduce(rbind, protein_dfs)
-}
-
-return_function_text <- function(proteins, protein) {
-  
-  protein_df <- get_protein_function(proteins, protein)
-  prot_func <- protein_df[["protein_function"]]
-  n <- protein_df[["n"]]
-  
-  protein_text <- paste0("Protein Function for ", protein,
-                          ":")
-  
-  if(!is.na(prot_func) & n > 1) {
-     function_text <- prot_func
+  if(nrow(protein_df)) {
+     return(protein_df)
   } else {
-    function_text <- "not enough information to assign a function"
+    cat("Not enough information to assign a function")
   }
   
-  paste(protein_text, function_text)
 }
 
-read_protein <- function(proteins) {
+read_protein <- function(interactions, lookup) {
   
   protein <- readline(prompt = "Enter protein: ") %>%
     tolower()
   
-  return_function_text(proteins, protein)
+  return_function_text(interactions, lookup, protein)
 }
 
 start_shiny <- function() {

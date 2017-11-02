@@ -13,9 +13,6 @@ ontologies <- get_ontologies()
 cat("\n[5] making a lookup table of proteins and functions...")
 lookup <- make_lookup(interactions, ontologies)
 
-cat("\n[6] making a useful table of protiens...")
-proteins <- make_table(interactions, ontologies, lookup)
-
-print(read_protein(proteins))
+print(read_protein(interactions, lookup))
 
 print(start_shiny())
