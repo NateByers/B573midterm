@@ -148,6 +148,30 @@ start_shiny <- function() {
   }
 }
 
+get_functions_amigo <- function(goid) {
+  # goid <- "GO:0042384"
+  lines <- readLines(paste0("http://amigo.geneontology.org/amigo/term/", goid))
+  
+  name_start <- grep('<dt>Name</dt>', lines)[1]
 
+  name <- trimws(gsub("</?dd>", "", lines[name_start + 1]), "both")
+  
+  if(name == "") {
+    name <- "None"
+  }
+  
+  definition_start <- grep('<dt>Definition</dt>', lines)[1]
+  
+  definition_stop <- grep('<dt>Comment</dt>', lines)
+  definition_stop <- definition_stop[definition_stop > definition_start][1]
+  
+  definition <- lines[(definition_start + 1):(definition_stop - 1)]
+  definition <- definition[!grepl("Source|cite|Comment", definition)]
+  definition <- gsub("</?dd>|\\t", "", definition)
+  definition <- trimws(grep("\\S", definition, value = TRUE), "both")
+  #definition
+  
+  list(name, definition)
+}
 
 
