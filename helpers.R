@@ -150,7 +150,8 @@ start_shiny <- function() {
 
 get_functions_amigo <- function(goid) {
   # goid <- "GO:0042384"
-  lines <- readLines(paste0("http://amigo.geneontology.org/amigo/term/", goid))
+  lines <- readLines(paste0("http://amigo.geneontology.org/amigo/term/", goid),
+                     n = 1000)
   
   name_start <- grep('<dt>Name</dt>', lines)[1]
 
