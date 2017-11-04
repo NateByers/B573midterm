@@ -1,4 +1,5 @@
 get_interactions <- function() {
+  
   interactions <- read.table("BIOGRID-ORGANISM-Homo_sapiens-3.1.91.tab",
                              stringsAsFactors = FALSE, skip = 35, header = TRUE, sep = "\t",
                              comment.char = "", quote = "") 
@@ -19,11 +20,11 @@ get_ontologies <- function() {
                                   skip = 23) 
   
   # # get the headers from the README here ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README
-  headers <- readLines("ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README")
-  headers <-headers[(grep("^GAF2.1", headers) + 3):(grep("^GPAD1.1", headers) - 2)]
-  headers <- sub("\\t\\d{1,2}\\s{1,7}", "", headers)
-  headers <- gsub("\\(|\\)|:", "_", headers)
-  headers <- gsub(" ", "", headers)
+  # headers <- readLines("ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README")
+  # headers <-headers[(grep("^GAF2.1", headers) + 3):(grep("^GPAD1.1", headers) - 2)]
+  # headers <- sub("\\t\\d{1,2}\\s{1,7}", "", headers)
+  # headers <- gsub("\\(|\\)|:", "_", headers)
+  # headers <- gsub(" ", "", headers)
   
   headers <- c("DB", "DB_Object_ID", "DB_Object_Symbol", "Qualifier", "GO_ID",
                "DB_Reference", "EvidenceCode", "With_or_From", "Aspect", "DB_Object_Name",
@@ -75,6 +76,7 @@ make_ontologies_lookup <- function(ontologies = get_ontologies()) {
 
 
 make_lookup <- function(interactions = get_interactions(), ontologies = get_ontologies()) {
+  
   lookup_interactions <- make_interaction_lookup(interactions)
   lookup_ontologies <- make_ontologies_lookup(ontologies)
   
@@ -88,7 +90,7 @@ make_lookup <- function(interactions = get_interactions(), ontologies = get_onto
 
 determine_protein_function <- function(interactions = get_interactions(), 
                                  lookup = make_lookup(), protein) {
-  # interactions <- get_interactions(); protein <- "EXOSC4"
+  
   protein <- tolower(protein)
   
   interactions <- interactions %>%
@@ -113,7 +115,6 @@ determine_protein_function <- function(interactions = get_interactions(),
 
 
 get_amigo_info <- function(go_id) {
-  # go_id <- "GO:0042384"
   
   lines <- try(readLines(paste0("http://amigo.geneontology.org/amigo/term/", go_id),
                          n = 1000))
@@ -161,7 +162,6 @@ attach_amigo_info <- function(protein_functions) {
 
 
 return_function_text <- function(interactions, lookup, protein) {
-  # interactions <- get_interactions(); protein <- "EXOSC4"
   
   cat(paste0("Protein Function(s) for ", protein,":\n"))
   
