@@ -19,16 +19,16 @@ get_ontologies <- function() {
                                   skip = 23) 
   
   # # get the headers from the README here ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README
-  # headers <- readLines("ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README")
-  # headers <-headers[(grep("^GAF2.1", headers) + 3):(grep("^GPAD1.1", headers) - 2)]
-  # headers <- sub("\\t\\d{1,2}\\s{1,7}", "", headers)
-  # headers <- gsub("\\(|\\)|:", "_", headers)
-  # headers <- gsub(" ", "", headers)
+  headers <- readLines("ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/HUMAN/README")
+  headers <-headers[(grep("^GAF2.1", headers) + 3):(grep("^GPAD1.1", headers) - 2)]
+  headers <- sub("\\t\\d{1,2}\\s{1,7}", "", headers)
+  headers <- gsub("\\(|\\)|:", "_", headers)
+  headers <- gsub(" ", "", headers)
   
-  headers <- c("DB", "DB_Object_ID", "DB_Object_Symbol", "Qualifier", "EvidenceCode",
-               "With_or_From", "Aspect", "DB_Object_Name", "DB_Object_Synonym",
-               "DB_Object_Type", "TaxonandInteractingtaxon", "Date", "Assigned_By",
-               "Annotation_Extension", "Gene_Product_Form_ID")
+  headers <- c("DB", "DB_Object_ID", "DB_Object_Symbol", "Qualifier", "GO_ID",
+               "DB_Reference", "EvidenceCode", "With_or_From", "Aspect", "DB_Object_Name",
+               "DB_Object_Synonym", "DB_Object_Type", "TaxonandInteractingtaxon",
+               "Date", "Assigned_By", "Annotation_Extension", "Gene_Product_Form_ID")
   
   names(ontologies) <- headers
   
