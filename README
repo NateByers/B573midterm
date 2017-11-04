@@ -1,0 +1,24 @@
+The enclosed .R files were developed using R 3.4.2. 
+
+Place the .R files in your working directory. Also place the uncompressed text
+files BIOGRID-ORGANISM-Homo_sapiens-3.1.91.tab and gene_association.goa_human
+in your working directory (NOTE: do not have the .txt extension on the file names). 
+
+Run 'source("midterm.R")' in the R console. The script will read in the files
+build a lookup table. You will be asked to supply a protein name. The script
+will take the input and find the GO id that is most associated with that
+protein in the interactions file. A data frame is returned with the GO id,
+the number of protein interactions that GO id was found in, and descriptive
+information from the Amigo website (http://amigo.geneontology.org/amigo).
+If there is a tie in the maximum number of GO ids for the protein, then
+the data frame will have more than one record. If the protein isn't recognized,
+then the returned text says it can't match the protein with the list of 
+Official Symbols. If the maximum number of interactions for a GO id is 1, 
+then the returned text says there is not enough information to associate
+a function.
+
+After a protein is submitted and a function is returned, you will be asked
+if you would like to start a shiny app. If you type 'y' and hit enter,
+a shiny app will open in your default browser. You will be able to select
+proteins from a list and see the returned function as a table in the browser.
+You can also see the app here: https://natebyers.shinyapps.io/B573midterm/.

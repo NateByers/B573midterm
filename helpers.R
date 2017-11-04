@@ -162,16 +162,21 @@ attach_amigo_info <- function(protein_functions) {
 
 return_function_text <- function(interactions, lookup, protein) {
   # interactions <- get_interactions(); protein <- "EXOSC4"
-  protein_df <- determine_protein_function(interactions, lookup, protein) %>%
-    attach_amigo_info() %>%
-    as.data.frame()
   
   cat(paste0("Protein Function(s) for ", protein,":\n"))
   
-  if(nrow(protein_df) > 0) {
-     return(protein_df)
+  if(tolower(protein) %in% lookup$official_symbol) {
+    protein_df <- determine_protein_function(interactions, lookup, protein) %>%
+      attach_amigo_info() %>%
+      as.data.frame()
+    
+    if(nrow(protein_df) > 0) {
+      return(protein_df)
+    } else {
+      cat("Not enough information to assign a function")
+    }
   } else {
-    cat("Not enough information to assign a function")
+    cat("Can't match the protein as an Official Symbol")
   }
 }
 

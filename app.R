@@ -59,6 +59,5 @@ ui <- fluidPage(title = "Protein Function by Association",
     )
 )
 
-#onStop(function() unlink("shiny_data.rda"))
 
 shinyApp(ui = ui, server = server)
