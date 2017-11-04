@@ -37,6 +37,7 @@ get_ontologies <- function() {
   ontologies
 }
 
+
 make_interaction_lookup <- function(interactions = get_interactions()) {
   # the %>% function is from the magrittr package, which is imported with the dplyr package
   
@@ -61,15 +62,17 @@ make_interaction_lookup <- function(interactions = get_interactions()) {
   lookup
 }
 
+
 make_ontologies_lookup <- function(ontologies = get_ontologies()) {
   
   lookup <- ontologies %>%
     dplyr::select(DB_Object_Synonym, GO_ID) %>%
-    dplyr::rename(aliases = DB_Object_Synonym) %>%
+    dplyr::rename(aliases = DB_Object_Synonym, go_id = GO_ID) %>%
     tidyr::separate_rows(aliases, sep = "\\|") %>%
     dplyr::mutate(aliases = trimws(aliases, "both")) %>%
     dplyr::distinct() 
 }
+
 
 make_lookup <- function(interactions = get_interactions(), ontologies = get_ontologies()) {
   lookup_interactions <- make_interaction_lookup(interactions)
@@ -82,10 +85,43 @@ make_lookup <- function(interactions = get_interactions(), ontologies = get_onto
   lookup
 }
 
-get_amigo_function <- function(goid) {
-  # goid <- "GO:0042384"
-  lines <- readLines(paste0("http://amigo.geneontology.org/amigo/term/", goid),
-                     n = 1000)
+
+determine_protein_function <- function(interactions = get_interactions(), 
+                                 lookup = make_lookup(), protein) {
+  # interactions <- get_interactions(); protein <- "EXOSC4"
+  protein <- tolower(protein)
+  
+  interactions <- interactions %>%
+    dplyr::mutate(interaction = row_number()) %>%
+    dplyr::select(interaction, starts_with("OFFICIAL")) %>%
+    tidyr::gather("interactor", "official_symbol", starts_with("OFFICIAL"))
+  
+  protein_df <- interactions %>%
+    dplyr::filter(official_symbol == protein)
+  
+  table <- interactions %>%
+    dplyr::semi_join(protein_df, "interaction") %>%
+    dplyr::filter(official_symbol != protein) %>%
+    dplyr::inner_join(lookup, "official_symbol") %>%
+    dplyr::group_by(go_id) %>%
+    dplyr::summarize(number_of_interactions = n()) %>%
+    dplyr::filter(number_of_interactions == max(number_of_interactions)) 
+    
+  table
+}
+
+
+get_amigo_info <- function(go_id) {
+  # go_id <- "GO:0042384"
+  
+  lines <- try(readLines(paste0("http://amig.geneontology.org/amigo/term/", go_id),
+                         n = 1000))
+  
+  if(class(lines) == "try-error") {
+    return(data.frame(amigo_name = "[can't reach Amigo website]", 
+                      amigo_definition = "[can't reach Amigo website]",
+                      stringsAsFactors = FALSE))
+  }
   
   name_start <- grep('<dt>Name</dt>', lines)[1]
   
@@ -104,42 +140,26 @@ get_amigo_function <- function(goid) {
   definition <- definition[!grepl("Source|cite|Comment", definition)]
   definition <- gsub("</?dd>|\\t", "", definition)
   definition <- trimws(grep("\\S", definition, value = TRUE), "both")
-  #definition
   
-  list(name, definition)
+  data.frame(amigo_name = name, amigo_definition = definition,
+             stringsAsFactors = FALSE)
 }
 
-get_protein_function <- function(interactions = get_interactions(), 
-                                 lookup = make_lookup(), protein) {
-  # interactions <- get_interactions(); protein <- "EXOSC4"
-  protein <- tolower(protein)
-  
-  interactions <- interactions %>%
-    dplyr::mutate(interaction = row_number()) %>%
-    dplyr::select(interaction, starts_with("OFFICIAL")) %>%
-    tidyr::gather("interactor", "official_symbol", starts_with("OFFICIAL"))
-  
-  protein_df <- interactions %>%
-    dplyr::filter(official_symbol == protein)
-  
-  table <- interactions %>%
-    dplyr::semi_join(protein_df, "interaction") %>%
-    dplyr::filter(official_symbol != protein) %>%
-    dplyr::inner_join(lookup, "official_symbol") %>%
-    dplyr::group_by(GO_ID) %>%
-    dplyr::summarize(number_of_interactions = n()) %>%
-    dplyr::filter(number_of_interactions == max(number_of_interactions)) 
-    
-  table
-}
 
+attach_amigo_info <- function(protein_functions) {
+  
+  if(nrow(protein_functions) == 0) {
+    return(protein_functions)
+  }
+  
+  amigo_info <- lapply(protein_functions$go_id, get_amigo_info)
+}
 
 
 return_function_text <- function(interactions, lookup, protein) {
   # interactions <- get_interactions(); protein <- "EXOSC4"
   protein_df <- get_protein_function(interactions, lookup, protein) %>%
     as.data.frame()
-  
   
   cat(paste0("Protein Function(s) for ", protein,":\n"))
   
@@ -148,8 +168,8 @@ return_function_text <- function(interactions, lookup, protein) {
   } else {
     cat("Not enough information to assign a function")
   }
-  
 }
+
 
 read_protein <- function(interactions, lookup) {
   
@@ -157,6 +177,7 @@ read_protein <- function(interactions, lookup) {
   
   return_function_text(interactions, lookup, protein)
 }
+
 
 start_shiny <- function() {
   
