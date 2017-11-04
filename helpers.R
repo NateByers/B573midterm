@@ -65,7 +65,7 @@ make_ontologies_lookup <- function(ontologies = get_ontologies()) {
   
   lookup <- ontologies %>%
     dplyr::select(DB_Object_Synonym, GO_ID) %>%
-    dplyr::rename(aliases = DB_Object_Synonym, protein_function = GO_ID) %>%
+    dplyr::rename(aliases = DB_Object_Synonym) %>%
     tidyr::separate_rows(aliases, sep = "\\|") %>%
     dplyr::mutate(aliases = trimws(aliases, "both")) %>%
     dplyr::distinct() 
@@ -82,10 +82,36 @@ make_lookup <- function(interactions = get_interactions(), ontologies = get_onto
   lookup
 }
 
+get_amigo_function <- function(goid) {
+  # goid <- "GO:0042384"
+  lines <- readLines(paste0("http://amigo.geneontology.org/amigo/term/", goid),
+                     n = 1000)
+  
+  name_start <- grep('<dt>Name</dt>', lines)[1]
+  
+  name <- trimws(gsub("</?dd>", "", lines[name_start + 1]), "both")
+  
+  if(name == "") {
+    name <- "None"
+  }
+  
+  definition_start <- grep('<dt>Definition</dt>', lines)[1]
+  
+  definition_stop <- grep('<dt>Comment</dt>', lines)
+  definition_stop <- definition_stop[definition_stop > definition_start][1]
+  
+  definition <- lines[(definition_start + 1):(definition_stop - 1)]
+  definition <- definition[!grepl("Source|cite|Comment", definition)]
+  definition <- gsub("</?dd>|\\t", "", definition)
+  definition <- trimws(grep("\\S", definition, value = TRUE), "both")
+  #definition
+  
+  list(name, definition)
+}
 
 get_protein_function <- function(interactions = get_interactions(), 
                                  lookup = make_lookup(), protein) {
-  # protein <- "EXOSC4"
+  # interactions <- get_interactions(); protein <- "EXOSC4"
   protein <- tolower(protein)
   
   interactions <- interactions %>%
@@ -100,21 +126,18 @@ get_protein_function <- function(interactions = get_interactions(),
     dplyr::semi_join(protein_df, "interaction") %>%
     dplyr::filter(official_symbol != protein) %>%
     dplyr::inner_join(lookup, "official_symbol") %>%
-    dplyr::group_by(protein_function) %>%
+    dplyr::group_by(GO_ID) %>%
     dplyr::summarize(number_of_interactions = n()) %>%
-    dplyr::filter(number_of_interactions > 1) %>%
-    dplyr::arrange(desc(number_of_interactions)) %>%
-    dplyr::mutate(official_symbol = toupper(protein),
-                  protein_function = toupper(protein_function))
+    dplyr::filter(number_of_interactions == max(number_of_interactions)) 
     
   table
 }
 
 
+
 return_function_text <- function(interactions, lookup, protein) {
-  
+  # interactions <- get_interactions(); protein <- "EXOSC4"
   protein_df <- get_protein_function(interactions, lookup, protein) %>%
-    dplyr::select(-official_symbol) %>%
     as.data.frame()
   
   
@@ -147,32 +170,4 @@ start_shiny <- function() {
     shiny::runApp()
   }
 }
-
-get_functions_amigo <- function(goid) {
-  # goid <- "GO:0042384"
-  lines <- readLines(paste0("http://amigo.geneontology.org/amigo/term/", goid),
-                     n = 1000)
-  
-  name_start <- grep('<dt>Name</dt>', lines)[1]
-
-  name <- trimws(gsub("</?dd>", "", lines[name_start + 1]), "both")
-  
-  if(name == "") {
-    name <- "None"
-  }
-  
-  definition_start <- grep('<dt>Definition</dt>', lines)[1]
-  
-  definition_stop <- grep('<dt>Comment</dt>', lines)
-  definition_stop <- definition_stop[definition_stop > definition_start][1]
-  
-  definition <- lines[(definition_start + 1):(definition_stop - 1)]
-  definition <- definition[!grepl("Source|cite|Comment", definition)]
-  definition <- gsub("</?dd>|\\t", "", definition)
-  definition <- trimws(grep("\\S", definition, value = TRUE), "both")
-  #definition
-  
-  list(name, definition)
-}
-
 
