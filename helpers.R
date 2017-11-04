@@ -105,7 +105,8 @@ determine_protein_function <- function(interactions = get_interactions(),
     dplyr::inner_join(lookup, "official_symbol") %>%
     dplyr::group_by(go_id) %>%
     dplyr::summarize(number_of_interactions = n()) %>%
-    dplyr::filter(number_of_interactions == max(number_of_interactions)) 
+    dplyr::filter(number_of_interactions == max(number_of_interactions)) %>%
+    dplyr::filter(number_of_interactions > 1)
     
   table
 }
@@ -114,7 +115,7 @@ determine_protein_function <- function(interactions = get_interactions(),
 get_amigo_info <- function(go_id) {
   # go_id <- "GO:0042384"
   
-  lines <- try(readLines(paste0("http://amig.geneontology.org/amigo/term/", go_id),
+  lines <- try(readLines(paste0("http://amigo.geneontology.org/amigo/term/", go_id),
                          n = 1000))
   
   if(class(lines) == "try-error") {
@@ -153,17 +154,21 @@ attach_amigo_info <- function(protein_functions) {
   }
   
   amigo_info <- lapply(protein_functions$go_id, get_amigo_info)
+  amigo_info <- Reduce(rbind, amigo_info)
+  
+  cbind(protein_functions, amigo_info)
 }
 
 
 return_function_text <- function(interactions, lookup, protein) {
   # interactions <- get_interactions(); protein <- "EXOSC4"
-  protein_df <- get_protein_function(interactions, lookup, protein) %>%
+  protein_df <- determine_protein_function(interactions, lookup, protein) %>%
+    attach_amigo_info() %>%
     as.data.frame()
   
   cat(paste0("Protein Function(s) for ", protein,":\n"))
   
-  if(nrow(protein_df)) {
+  if(nrow(protein_df) > 0) {
      return(protein_df)
   } else {
     cat("Not enough information to assign a function")
