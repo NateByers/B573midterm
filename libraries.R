@@ -16,8 +16,6 @@ libraries <- sapply(lines, function(x) {
 libraries <- libraries[libraries != "shiny"]
 
 for(i in unique(libraries)) {
-  if(!require(i, character.only = TRUE)){
-    install.packages(i)
-  }
+  install.packages(i)
   library(i, character.only = TRUE)
 }
